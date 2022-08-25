@@ -3,8 +3,8 @@ var vid_titles = [];
 var prev_vid_title_count = 0;
 var regex = /[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~]/g; // to remove punctuation from vid titles
 
-var replacementVids = [];
-var replacementNum;
+var replacementVids = []; // array to store the replacement vids
+var replacementNum; // number of replacements needed
 
 if(localStorage.getItem(favTeamsLocalStorageKey) != null)
 {var keywords = localStorage.getItem(favTeamsLocalStorageKey).split(",");}
@@ -35,29 +35,27 @@ function getTitles(){
         }
     }
 
-    replacementNum = vid_titles.length;
+    replacementNum = vid_titles.length; // setting the number of replacements
+}
+
+function getReplacementVids() {
+    while (replacementVids.length < replacementNum) { // keeping adding replacements until there is enough
+        getReplacementRow();
+    }
 }
 
 function getReplacementRow() {
     var rows = document.getElementsByTagName("ytd-rich-grid-row");
     var last_row = rows[rows.length - 1];
-    var rowVids = last_row.querySelectorAll("ytd-rich-item-renderer");
+    var rowVids = last_row.querySelectorAll("ytd-rich-item-renderer"); // node list of all the videos from the last row
 
     for (var i = 0; i < rowVids.length; i++) {
-        if (vid_titles.indexOf(rowVids[i].querySelector("#video-title")) == -1) {
+        if (vid_titles.indexOf(rowVids[i].querySelector("#video-title")) == -1) { // if the video isn't filtered, add it as a replacement
             replacementVids.push(rowVids[i]);
         }
     }
 
     last_row.remove();
-}
-
-function getReplacementVids() {
-    var j = 1;
-    while (replacementVids.length < replacementNum) {
-        getReplacementRow();
-        j++;
-    }
 }
 
 function blurUnwantedVids(){
@@ -76,11 +74,11 @@ function unBlurUnwantedVids(){
 setTimeout(()=>{
     getTitles(); 
     blurUnwantedVids();
-    getReplacementVids();
+    getReplacementVids(); // wait for the filtered titles to be set, then get replacements
     for (let i = 0; i < vid_titles.length; i++) {
         replaceVid(vid_titles[i]);
     }
-    vid_titles = [];
+    vid_titles = []; // empty the videos to filter array
 }, 2000); //wait 2 sec so that all vids load
 
 let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -115,9 +113,9 @@ function receiver(request) {
             keywords = []
         }
 
-        console.log(keywords);
         getTitles();
         blurUnwantedVids();
+        // console.log(vid_titles);
         replacementVids = [];
         getReplacementVids();
         for (let i = 0; i < vid_titles.length; i++) {
@@ -154,3 +152,17 @@ function replaceVid(unwantedVidTitle){
 //     }
 //     return replacementVid;
 // }
+
+// setTimeout(()=>{
+//     setInterval(()=>{
+//         getTitles();
+//         if (vid_titles.length > 0) {
+//             replacementVids = [];
+//             getReplacementVids();
+//             for (let i = 0; i < vid_titles.length; i++) {
+//                 replaceVid(vid_titles[i]);
+//             }
+//             vid_titles = [];
+//         }
+//     }, 5000)
+// }, 8000)
