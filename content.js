@@ -121,5 +121,5 @@ function changeVid(unwantedVidTitle) {
         unwantedVidContainer.appendChild(replacementVid);
         replacementVidRow.remove();
     }
-     return replacementVid;
+    return replacementVid;
 }
