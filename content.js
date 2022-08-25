@@ -2,6 +2,10 @@ const favTeamsLocalStorageKey = "favTeamsData";
 var vid_titles = [];
 var prev_vid_title_count = 0;
 var regex = /[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~]/g; // to remove punctuation from vid titles
+
+var replacementVids = [];
+var replacementNum;
+
 if(localStorage.getItem(favTeamsLocalStorageKey) != null)
 {var keywords = localStorage.getItem(favTeamsLocalStorageKey).split(",");}
 else
@@ -30,6 +34,30 @@ function getTitles(){
             vid_titles.push(title);
         }
     }
+
+    replacementNum = vid_titles.length;
+}
+
+function getReplacementRow() {
+    var rows = document.getElementsByTagName("ytd-rich-grid-row");
+    var last_row = rows[rows.length - 1];
+    var rowVids = last_row.querySelectorAll("ytd-rich-item-renderer");
+
+    for (var i = 0; i < rowVids.length; i++) {
+        if (vid_titles.indexOf(rowVids[i].querySelector("#video-title")) == -1) {
+            replacementVids.push(rowVids[i]);
+        }
+    }
+
+    last_row.remove();
+}
+
+function getReplacementVids() {
+    var j = 1;
+    while (replacementVids.length < replacementNum) {
+        getReplacementRow();
+        j++;
+    }
 }
 
 function blurUnwantedVids(){
@@ -48,13 +76,11 @@ function unBlurUnwantedVids(){
 setTimeout(()=>{
     getTitles(); 
     blurUnwantedVids();
-    var i = 0;
-    var lastVidChanged = true;
-    while (i < vid_titles.length && lastVidChanged) {
-        lastVidChanged = changeVid(vid_titles[i]);
-        i++;
+    getReplacementVids();
+    for (let i = 0; i < vid_titles.length; i++) {
+        replaceVid(vid_titles[i]);
     }
-    vid_titles = vid_titles.slice(i);
+    vid_titles = [];
 }, 2000); //wait 2 sec so that all vids load
 
 let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -67,15 +93,10 @@ window.onscroll = function (e) { // get the titles that load after the user scro
     }
     if (vid_titles.length > prev_vid_title_count){ // if more vid titles added to the vid title arr
         blurUnwantedVids();
-        setTimeout(()=>{
-            var i = 0;
-            var lastVidChanged = true;
-            while (i < vid_titles.length && lastVidChanged) {
-                lastVidChanged = changeVid(vid_titles[i]);
-                i++;
-            }
-            vid_titles = vid_titles.slice(i);
-        }, 2000)
+        for (let i = 0; i < vid_titles.length; i++) {
+            replaceVid(vid_titles[i]);
+        }
+        vid_titles = [];
     }
 }
 
@@ -97,29 +118,39 @@ function receiver(request) {
         console.log(keywords);
         getTitles();
         blurUnwantedVids();
-        setTimeout(()=>{
-            var i = 0;
-            var lastVidChanged = true;
-            while (i < vid_titles.length && lastVidChanged) {
-                lastVidChanged = changeVid(vid_titles[i]);
-                i++;
-            }
-            vid_titles = vid_titles.slice(i);
-        }, 2000)
+        replacementVids = [];
+        getReplacementVids();
+        for (let i = 0; i < vid_titles.length; i++) {
+            replaceVid(vid_titles[i]);
+        }
+        vid_titles = [];
     }
 }
 
-function changeVid(unwantedVidTitle) {
+function replaceVid(unwantedVidTitle){
     var unwantedVid = unwantedVidTitle.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement;
     var unwantedVidContainer = unwantedVid.parentElement;
     unwantedVid.remove();
 
-    var replacementVid = document.querySelectorAll("ytd-rich-item-renderer")[13];
+    unwantedVidContainer.appendChild(replacementVids[0]);
+    replacementVids.splice(0, 1);
 
-    if (replacementVid) {
-        var replacementVidRow = replacementVid.parentElement.parentElement;
-        unwantedVidContainer.appendChild(replacementVid);
-        replacementVidRow.remove();
+    if (replacementVids.length == 0) {
+        getReplacementVids();
     }
-    return replacementVid;
 }
+
+// function changeVid(unwantedVidTitle) {
+//     var replacementVid = document.querySelectorAll("ytd-rich-item-renderer")[13];
+
+//     if (replacementVid) {
+//         var unwantedVid = unwantedVidTitle.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement;
+//         var unwantedVidContainer = unwantedVid.parentElement;
+//         unwantedVid.remove();
+
+//         var replacementVidRow = replacementVid.parentElement.parentElement;
+//         unwantedVidContainer.appendChild(replacementVid);
+//         replacementVidRow.remove();
+//     }
+//     return replacementVid;
+// }
