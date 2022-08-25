@@ -8,6 +8,10 @@ else
 {var keywords = []}
 chrome.runtime.onMessage.addListener(receiver); // Receiving the popup.js message with favourite teams
 
+
+console.log("Keywords:")
+console.log(keywords);
+
 function getTitles(){
     vid_titles = [];
     let title;
@@ -44,10 +48,13 @@ function unBlurUnwantedVids(){
 setTimeout(()=>{
     getTitles(); 
     blurUnwantedVids();
-    for (let i=0; i<vid_titles.length; i++){
-        changeVid(vid_titles[i]);
+    var i = 0;
+    var lastVidChanged = true;
+    while (i < vid_titles.length && lastVidChanged) {
+        lastVidChanged = changeVid(vid_titles[i]);
+        i++;
     }
-    vid_titles = [];
+    vid_titles = vid_titles.slice(i);
 }, 2000); //wait 2 sec so that all vids load
 
 let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -61,10 +68,13 @@ window.onscroll = function (e) { // get the titles that load after the user scro
     if (vid_titles.length > prev_vid_title_count){ // if more vid titles added to the vid title arr
         blurUnwantedVids();
         setTimeout(()=>{
-            for (let i=0; i<vid_titles.length; i++){
-                changeVid(vid_titles[i].parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement);
+            var i = 0;
+            var lastVidChanged = true;
+            while (i < vid_titles.length && lastVidChanged) {
+                lastVidChanged = changeVid(vid_titles[i]);
+                i++;
             }
-            vid_titles = [];
+            vid_titles = vid_titles.slice(i);
         }, 2000)
     }
 }
@@ -73,7 +83,6 @@ window.onscroll = function (e) { // get the titles that load after the user scro
 function receiver(request) {
     // Update keywords
     unBlurUnwantedVids();
-    console.log(request);
     if (request["subject"] == "favTeams"){
         let popupFavTeams = request["data"];
         if (popupFavTeams != null){
@@ -89,10 +98,13 @@ function receiver(request) {
         getTitles();
         blurUnwantedVids();
         setTimeout(()=>{
-            for (let i=0; i<vid_titles.length; i++){
-                changeVid(vid_titles[i].parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement);
+            var i = 0;
+            var lastVidChanged = true;
+            while (i < vid_titles.length && lastVidChanged) {
+                lastVidChanged = changeVid(vid_titles[i]);
+                i++;
             }
-            vid_titles = [];
+            vid_titles = vid_titles.slice(i);
         }, 2000)
     }
 }
@@ -103,12 +115,11 @@ function changeVid(unwantedVidTitle) {
     unwantedVid.remove();
 
     var replacementVid = document.querySelectorAll("ytd-rich-item-renderer")[13];
-    var replacementVidRow = replacementVid.parentElement.parentElement;
-    console.log(replacementVid);
 
-    unwantedVidContainer.appendChild(replacementVid);
-    replacementVidRow.remove();
+    if (replacementVid) {
+        var replacementVidRow = replacementVid.parentElement.parentElement;
+        unwantedVidContainer.appendChild(replacementVid);
+        replacementVidRow.remove();
+    }
+     return replacementVid;
 }
-
-console.log("Keywords:")
-console.log(keywords);
