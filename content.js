@@ -117,7 +117,7 @@ function init() {
         }, 2000); //wait 2 sec so that all vids load
 
         let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        document.addEventListener("scroll", (e) => { // get the titles that load after the user scrolls
+        document.addEventListener("scroll", function _listener(e) { // get the titles that load after the user scrolls
             let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
             if (currentScroll > lastScrollTop){
                 prev_vid_title_count = vid_titles.length;
@@ -138,9 +138,9 @@ function init() {
         if (currentUrl != window.location.href) {
             console.log("once");
             currentUrl = window.location.href;
-            document.removeEventListener("scroll", );
 
             if (currentUrl.includes("youtube.com/watch")) {
+                document.removeEventListener("scroll", _listener);
                 console.log("here");
                 getTitles(); 
                 blurUnwantedVids();
@@ -160,7 +160,7 @@ function init() {
                 }, 2000); //wait 2 sec so that all vids load
 
                 let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                document.addEventListener("scroll", (e) => { // get the titles that load after the user scrolls
+                document.addEventListener("scroll", function _listener(e) { // get the titles that load after the user scrolls
                     let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
                     if (currentScroll > lastScrollTop){
                         prev_vid_title_count = vid_titles.length;
