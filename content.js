@@ -117,7 +117,7 @@ function init() {
         }, 2000); //wait 2 sec so that all vids load
 
         let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        window.onscroll = function (e) { // get the titles that load after the user scrolls
+        document.addEventListener("scroll", (e) => { // get the titles that load after the user scrolls
             let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
             if (currentScroll > lastScrollTop){
                 prev_vid_title_count = vid_titles.length;
@@ -131,13 +131,14 @@ function init() {
                 }
                 vid_titles = [];
             }
-        }
+        });
     }
 
     setInterval(()=>{
         if (currentUrl != window.location.href) {
             console.log("once");
             currentUrl = window.location.href;
+            document.removeEventListener("scroll", );
 
             if (currentUrl.includes("youtube.com/watch")) {
                 console.log("here");
@@ -159,7 +160,7 @@ function init() {
                 }, 2000); //wait 2 sec so that all vids load
 
                 let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                window.onscroll = function (e) { // get the titles that load after the user scrolls
+                document.addEventListener("scroll", (e) => { // get the titles that load after the user scrolls
                     let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
                     if (currentScroll > lastScrollTop){
                         prev_vid_title_count = vid_titles.length;
@@ -173,7 +174,7 @@ function init() {
                         }
                         vid_titles = [];
                     }
-                }
+                });
             }
         }
     }, 1500)
