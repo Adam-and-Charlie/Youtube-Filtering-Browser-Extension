@@ -1,6 +1,7 @@
 window.onload = init;
+const wait = (timeToDelay) => new Promise((resolve) => setTimeout(resolve, timeToDelay));
 
-function init() {
+async function init() {
     const favTeamsLocalStorageKey = "favTeamsData";
     var vid_titles = [];
     var prev_vid_title_count = 0;
@@ -17,6 +18,7 @@ function init() {
     {var keywords = []}
     chrome.runtime.onMessage.addListener(receiver); // Receiving the popup.js message with favourite teams
 
+    let lastScrollTop;
 
     console.log("Keywords:")
     console.log(keywords);
@@ -97,50 +99,39 @@ function init() {
 
     if (currentUrl.includes("youtube.com/watch")) {
         // get the titles before the user starts scrolling
-        setTimeout(()=>{
-            getTitles(); 
-            blurUnwantedVids();
-        }, 2000); //wait 2 sec so that all vids load
+        await wait(2000); //wait 2 sec so that all vids load
+        getTitles(); 
+        blurUnwantedVids();
     }
     else {
         console.log("nothing is playing");
         
         // get the titles before the user starts scrolling
-        setTimeout(()=>{
-            getTitles(); 
-            blurUnwantedVids();
-            getReplacementVids(); // wait for the filtered titles to be set, then get replacements
-            for (let i = 0; i < vid_titles.length; i++) {
-                replaceVid(vid_titles[i]);
-            }
-            vid_titles = []; // empty the videos to filter array
-        }, 2000); //wait 2 sec so that all vids load
+        await wait(2000);
+        getTitles(); 
+        console.log(vid_titles);
+        blurUnwantedVids();
+        getReplacementVids(); // wait for the filtered titles to be set, then get replacements
+        console.log(replacementVids);
+        for (let i = 0; i < vid_titles.length; i++) {
+            replaceVid(vid_titles[i]);
+        }
+        vid_titles = []; // empty the videos to filter array
 
-        let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        document.addEventListener("scroll", function _listener(e) { // get the titles that load after the user scrolls
-            let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-            if (currentScroll > lastScrollTop){
-                prev_vid_title_count = vid_titles.length;
-                getTitles();
-                lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
-            }
-            if (vid_titles.length > prev_vid_title_count){ // if more vid titles added to the vid title arr
-                blurUnwantedVids();
-                for (let i = 0; i < vid_titles.length; i++) {
-                    replaceVid(vid_titles[i]);
-                }
-                vid_titles = [];
-            }
-        });
+        lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        document.addEventListener("scroll", scrollHandler);
     }
 
-    setInterval(()=>{
+    console.log("huhu");
+
+    setInterval(async ()=>{
         if (currentUrl != window.location.href) {
+
             console.log("once");
             currentUrl = window.location.href;
 
             if (currentUrl.includes("youtube.com/watch")) {
-                document.removeEventListener("scroll", _listener);
+                document.removeEventListener("scroll", scrollHandler);
                 console.log("here");
                 getTitles(); 
                 blurUnwantedVids();
@@ -149,32 +140,17 @@ function init() {
                 console.log("nothing is playing");
                 
                 // get the titles before the user starts scrolling
-                setTimeout(()=>{
-                    getTitles(); 
-                    blurUnwantedVids();
-                    getReplacementVids(); // wait for the filtered titles to be set, then get replacements
-                    for (let i = 0; i < vid_titles.length; i++) {
-                        replaceVid(vid_titles[i]);
-                    }
-                    vid_titles = []; // empty the videos to filter array
-                }, 2000); //wait 2 sec so that all vids load
+                await wait(2000);
+                getTitles(); 
+                blurUnwantedVids();
+                getReplacementVids(); // wait for the filtered titles to be set, then get replacements
+                for (let i = 0; i < vid_titles.length; i++) {
+                    replaceVid(vid_titles[i]);
+                }
+                vid_titles = []; // empty the videos to filter array
 
-                let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                document.addEventListener("scroll", function _listener(e) { // get the titles that load after the user scrolls
-                    let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-                    if (currentScroll > lastScrollTop){
-                        prev_vid_title_count = vid_titles.length;
-                        getTitles();
-                        lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
-                    }
-                    if (vid_titles.length > prev_vid_title_count){ // if more vid titles added to the vid title arr
-                        blurUnwantedVids();
-                        for (let i = 0; i < vid_titles.length; i++) {
-                            replaceVid(vid_titles[i]);
-                        }
-                        vid_titles = [];
-                    }
-                });
+                lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                document.addEventListener("scroll", scrollHandler);
             }
         }
     }, 1500)
@@ -217,6 +193,22 @@ function init() {
 
         if (replacementVids.length == 0) {
             getReplacementVids();
+        }
+    }
+
+    function scrollHandler(e) { // get the titles that load after the user scrolls
+        let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+        if (currentScroll > lastScrollTop){
+            prev_vid_title_count = vid_titles.length;
+            getTitles();
+            lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+        }
+        if (vid_titles.length > prev_vid_title_count){ // if more vid titles added to the vid title arr
+            blurUnwantedVids();
+            for (let i = 0; i < vid_titles.length; i++) {
+                replaceVid(vid_titles[i]);
+            }
+            vid_titles = [];
         }
     }
 }
