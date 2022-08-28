@@ -63,6 +63,7 @@ async function init() {
         }
 
         last_row.remove();
+        getTitles();
     }
 
     function blurUnwantedVids(){
@@ -99,8 +100,10 @@ async function init() {
 
     if (currentUrl.includes("youtube.com/watch")) {
         // get the titles before the user starts scrolling
-        await wait(2000); //wait 2 sec so that all vids load
+        await wait(4000); //wait 2 sec so that all vids load
         getTitles(); 
+        console.log("105");
+        console.log(vid_titles);
         blurUnwantedVids();
     }
     else {
@@ -109,7 +112,6 @@ async function init() {
         // get the titles before the user starts scrolling
         await wait(2000);
         getTitles(); 
-        console.log(vid_titles);
         blurUnwantedVids();
         getReplacementVids(); // wait for the filtered titles to be set, then get replacements
         console.log(replacementVids);
@@ -126,12 +128,12 @@ async function init() {
 
     setInterval(async ()=>{
         if (currentUrl != window.location.href) {
-
             console.log("once");
             currentUrl = window.location.href;
 
             if (currentUrl.includes("youtube.com/watch")) {
                 document.removeEventListener("scroll", scrollHandler);
+                await wait(4000);
                 console.log("here");
                 getTitles(); 
                 blurUnwantedVids();
@@ -142,6 +144,7 @@ async function init() {
                 // get the titles before the user starts scrolling
                 await wait(2000);
                 getTitles(); 
+                console.log(vid_titles);
                 blurUnwantedVids();
                 getReplacementVids(); // wait for the filtered titles to be set, then get replacements
                 for (let i = 0; i < vid_titles.length; i++) {
