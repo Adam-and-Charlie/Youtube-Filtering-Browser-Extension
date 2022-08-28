@@ -1,6 +1,7 @@
 window.onload = init;
-const wait = (timeToDelay) => new Promise((resolve) => setTimeout(resolve, timeToDelay));
+const wait = (timeToDelay) => new Promise((resolve) => setTimeout(resolve, timeToDelay)); // synchrons delay
 
+// Function to call once page is loaded
 async function init() {
     const favTeamsLocalStorageKey = "favTeamsData";
     var vid_titles = [];
@@ -19,9 +20,6 @@ async function init() {
     chrome.runtime.onMessage.addListener(receiver); // Receiving the popup.js message with favourite teams
 
     let lastScrollTop;
-
-    console.log("Keywords:")
-    console.log(keywords);
 
     function getTitles(){
         vid_titles = [];
@@ -62,7 +60,7 @@ async function init() {
             }
         }
 
-        last_row.remove();
+        last_row.remove(); // remove the row
         getTitles();
     }
 
@@ -78,6 +76,7 @@ async function init() {
         }
     }
 
+    // function to wait for an element to load
     function waitForElm(selector) {
         return new Promise(resolve => {
             if (document.querySelector(selector)) {
@@ -98,24 +97,21 @@ async function init() {
         });
     }
 
+    // if watching a video
     if (currentUrl.includes("youtube.com/watch")) {
         // get the titles before the user starts scrolling
-        await wait(4000); //wait 2 sec so that all vids load
+        await wait(4000); //wait 4 sec so that all vids load
         getTitles(); 
-        console.log("105");
-        console.log(vid_titles);
         blurUnwantedVids();
         getReplacementVidsWatchState();
 
-        await wait(4000);
+        await wait(4000); // wait until replacements are found
         for (let i = 0; i < vid_titles.length; i++) {
             replaceVidWatchState(vid_titles[i]);
         }
-        vid_titles = [];
+        vid_titles = []; // emptying unwanted video array
     }
-    else {
-        console.log("nothing is playing");
-        
+    else { // on recommendations page
         // get the titles before the user starts scrolling
         await wait(2000);
         getTitles(); 
@@ -128,12 +124,10 @@ async function init() {
         vid_titles = []; // empty the videos to filter array
 
         lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        document.addEventListener("scroll", scrollHandler);
+        document.addEventListener("scroll", scrollHandler); // add filter function to scroll event
     }
 
-    console.log("huhu");
-
-    setInterval(async ()=>{
+    setInterval(async ()=>{ // polling to check for url changes
         if (currentUrl != window.location.href) {
             console.log("once");
             currentUrl = window.location.href;
@@ -191,7 +185,6 @@ async function init() {
 
             getTitles();
             blurUnwantedVids();
-            // console.log(vid_titles);
             replacementVids = [];
             getReplacementVids();
             for (let i = 0; i < vid_titles.length; i++) {
@@ -204,15 +197,15 @@ async function init() {
     }
 
     function replaceVid(unwantedVidTitle){
-        console.log("bruh");
+        // item rendering element of the video
         var unwantedVid = unwantedVidTitle.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement;
-        var unwantedVidContainer = unwantedVid.parentElement;
+        var unwantedVidContainer = unwantedVid.parentElement; // container (parent element) of the video item renderer element
         unwantedVid.remove();
 
-        unwantedVidContainer.appendChild(replacementVids[0]);
-        replacementVids.splice(0, 1);
+        unwantedVidContainer.appendChild(replacementVids[0]); // adding replacement
+        replacementVids.splice(0, 1); // removing replacement from replacement array
 
-        if (replacementVids.length == 0) {
+        if (replacementVids.length == 0) { // refill replacements if empty
             getReplacementVids();
         }
     }
@@ -233,22 +226,18 @@ async function init() {
         }
     }
 
-    async function getReplacementVidsWatchState() {
-        var loopNum = 0;
+    async function getReplacementVidsWatchState() { // getting replacement when on a watching state page
+        var loopNum = 0; // number of times the show more button was pressed, used later to delete extra auto-generated show more buttons
         while (replacementVids.length < replacementNum) { // keeping adding replacements until there is enough
-            var loadMoreBtn = await waitForElm("tp-yt-paper-button[class='style-scope ytd-button-renderer style-suggestive size-default']");
-            loadMoreBtn.click();
+            var loadMoreBtn = await waitForElm("tp-yt-paper-button[class='style-scope ytd-button-renderer style-suggestive size-default']"); // wait for show more button to load
+            loadMoreBtn.click(); // click the show more button to find replacements
             console.log("clicked!");
-            // var j = 1;
 
             await wait(2000);
 
-            var loadedVidsNodeList = document.querySelectorAll("ytd-compact-video-renderer");
-            var loadedVids = Array.from(loadedVidsNodeList).slice(20);
+            var loadedVidsNodeList = document.querySelectorAll("ytd-compact-video-renderer"); // nodelist of new loaded videos
+            var loadedVids = Array.from(loadedVidsNodeList).slice(20); // convert to array
 
-            console.log(loadedVids);
-
-            // replacementVids = toNodeList(loadedVids);
             for (let i=0; i < loadedVids.length; i++) {
                 if (!keywords.some(keyword => loadedVids[i].querySelector("#video-title").innerHTML.toLowerCase().includes(keyword))) { // if the video isn't filtered, add it as a replacement
                     replacementVids.push(loadedVids[i])
@@ -256,29 +245,25 @@ async function init() {
             }
 
             for (let i = 0; i < loadedVids.length; i++) {
-                loadedVids[i].remove();
+                loadedVids[i].remove(); // remove the new loaded videos
             }
 
-            console.log(replacementVids[0]);
-
-            console.log(replacementVids.length);
             loopNum++;
         }
 
         // Deleting the extra auto-generated show more buttons
         for (let i=0; i < loopNum - 1; i++) {
             var showMoreBtn = document.querySelectorAll("ytd-continuation-item-renderer[class='style-scope ytd-item-section-renderer']")[1];
-            // var showMoreBtnContainer = showMoreBtn.parentElement;
             showMoreBtn.remove();
         }
     }
 
+    // replace unwanted videos in the watching state page
     function replaceVidWatchState(unwantedVidTitle) {
         var unwantedVid = unwantedVidTitle.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement;
         var unwantedVidContainer = unwantedVid.parentElement;
         unwantedVid.remove();
     
-        console.log(replacementVids[0]);
         unwantedVidContainer.appendChild(replacementVids[0]);
         replacementVids.splice(0, 1);
     
@@ -286,37 +271,9 @@ async function init() {
             getReplacementVids();
         }
     
+        // reappending the show more button to ensure it is below all the videos
         var showMoreBtn = document.querySelectorAll("ytd-continuation-item-renderer[class='style-scope ytd-item-section-renderer']")[1];
         showMoreBtn.remove();
         unwantedVidContainer.appendChild(showMoreBtn);
     }
 }
-
-// function changeVid(unwantedVidTitle) {
-//     var replacementVid = document.querySelectorAll("ytd-rich-item-renderer")[13];
-
-//     if (replacementVid) {
-//         var unwantedVid = unwantedVidTitle.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement;
-//         var unwantedVidContainer = unwantedVid.parentElement;
-//         unwantedVid.remove();
-
-//         var replacementVidRow = replacementVid.parentElement.parentElement;
-//         unwantedVidContainer.appendChild(replacementVid);
-//         replacementVidRow.remove();
-//     }
-//     return replacementVid;
-// }
-
-// setTimeout(()=>{
-//     setInterval(()=>{
-//         getTitles();
-//         if (vid_titles.length > 0) {
-//             replacementVids = [];
-//             getReplacementVids();
-//             for (let i = 0; i < vid_titles.length; i++) {
-//                 replaceVid(vid_titles[i]);
-//             }
-//             vid_titles = [];
-//         }
-//     }, 5000)
-// }, 8000)
