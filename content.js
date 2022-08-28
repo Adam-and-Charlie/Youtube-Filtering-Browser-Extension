@@ -57,7 +57,7 @@ async function init() {
         var rowVids = last_row.querySelectorAll("ytd-rich-item-renderer"); // node list of all the videos from the last row
 
         for (var i = 0; i < rowVids.length; i++) {
-            if (vid_titles.indexOf(rowVids[i].querySelector("#video-title")) == -1) { // if the video isn't filtered, add it as a replacement
+            if (!keywords.some(keyword => rowVids[i].querySelector("#video-title").innerHTML.toLowerCase().includes(keyword))) { // if the video isn't filtered, add it as a replacement
                 replacementVids.push(rowVids[i]);
             }
         }
@@ -105,6 +105,13 @@ async function init() {
         console.log("105");
         console.log(vid_titles);
         blurUnwantedVids();
+        getReplacementVidsWatchState();
+
+        await wait(4000);
+        for (let i = 0; i < vid_titles.length; i++) {
+            replaceVidWatchState(vid_titles[i]);
+        }
+        vid_titles = [];
     }
     else {
         console.log("nothing is playing");
@@ -130,6 +137,7 @@ async function init() {
         if (currentUrl != window.location.href) {
             console.log("once");
             currentUrl = window.location.href;
+            replacementVids = []; // Emptying the replacementVid array because the videos are formatted differently
 
             if (currentUrl.includes("youtube.com/watch")) {
                 document.removeEventListener("scroll", scrollHandler);
@@ -137,6 +145,14 @@ async function init() {
                 console.log("here");
                 getTitles(); 
                 blurUnwantedVids();
+
+                getReplacementVidsWatchState();
+
+                await wait(4000); 
+                for (let i = 0; i < vid_titles.length; i++) {
+                    replaceVidWatchState(vid_titles[i]);
+                }
+                vid_titles = [];
             }
             else {
                 console.log("nothing is playing");
@@ -183,6 +199,8 @@ async function init() {
             }
             vid_titles = [];
         }
+
+        location.reload();
     }
 
     function replaceVid(unwantedVidTitle){
@@ -213,6 +231,64 @@ async function init() {
             }
             vid_titles = [];
         }
+    }
+
+    async function getReplacementVidsWatchState() {
+        var loopNum = 0;
+        while (replacementVids.length < replacementNum) { // keeping adding replacements until there is enough
+            var loadMoreBtn = await waitForElm("tp-yt-paper-button[class='style-scope ytd-button-renderer style-suggestive size-default']");
+            loadMoreBtn.click();
+            console.log("clicked!");
+            // var j = 1;
+
+            await wait(2000);
+
+            var loadedVidsNodeList = document.querySelectorAll("ytd-compact-video-renderer");
+            var loadedVids = Array.from(loadedVidsNodeList).slice(20);
+
+            console.log(loadedVids);
+
+            // replacementVids = toNodeList(loadedVids);
+            for (let i=0; i < loadedVids.length; i++) {
+                if (!keywords.some(keyword => loadedVids[i].querySelector("#video-title").innerHTML.toLowerCase().includes(keyword))) { // if the video isn't filtered, add it as a replacement
+                    replacementVids.push(loadedVids[i])
+                }
+            }
+
+            for (let i = 0; i < loadedVids.length; i++) {
+                loadedVids[i].remove();
+            }
+
+            console.log(replacementVids[0]);
+
+            console.log(replacementVids.length);
+            loopNum++;
+        }
+
+        // Deleting the extra auto-generated show more buttons
+        for (let i=0; i < loopNum - 1; i++) {
+            var showMoreBtn = document.querySelectorAll("ytd-continuation-item-renderer[class='style-scope ytd-item-section-renderer']")[1];
+            // var showMoreBtnContainer = showMoreBtn.parentElement;
+            showMoreBtn.remove();
+        }
+    }
+
+    function replaceVidWatchState(unwantedVidTitle) {
+        var unwantedVid = unwantedVidTitle.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement;
+        var unwantedVidContainer = unwantedVid.parentElement;
+        unwantedVid.remove();
+    
+        console.log(replacementVids[0]);
+        unwantedVidContainer.appendChild(replacementVids[0]);
+        replacementVids.splice(0, 1);
+    
+        if (replacementVids.length == 0) {
+            getReplacementVids();
+        }
+    
+        var showMoreBtn = document.querySelectorAll("ytd-continuation-item-renderer[class='style-scope ytd-item-section-renderer']")[1];
+        showMoreBtn.remove();
+        unwantedVidContainer.appendChild(showMoreBtn);
     }
 }
 
