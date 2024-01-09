@@ -5,7 +5,7 @@ This browser extension replaces all YouTube
 videos with specific keywords in their titles
 with other YouTube videos.
 
-## Insparation
+## Inspiration
 This project was made as a "learning project"
 to learn more about browser extentions.
 
